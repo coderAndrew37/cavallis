@@ -10,6 +10,16 @@ const userSchema = new mongoose.Schema({
     enum: ["user", "distributor", "admin"],
     default: "user",
   },
+  cart: [
+    {
+      productId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Product",
+        required: true,
+      },
+      quantity: { type: Number, default: 1, min: 1 },
+    },
+  ],
   loyaltyPoints: { type: Number, default: 0 },
   savedProducts: [{ type: mongoose.Schema.Types.ObjectId, ref: "Product" }],
   createdAt: { type: Date, default: Date.now },
