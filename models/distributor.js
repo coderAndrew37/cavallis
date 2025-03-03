@@ -18,6 +18,10 @@ const distributorSchema = new mongoose.Schema({
 
 const Distributor = mongoose.model("Distributor", distributorSchema);
 
+// Index for faster searching
+distributorSchema.index({ userId: 1 }); // Index for user ID
+distributorSchema.index({ status: 1 }); // Index for status
+
 // Validation for distributor sign-up
 function validateDistributor(distributor) {
   const schema = Joi.object({

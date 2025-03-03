@@ -26,6 +26,10 @@ const orderSchema = new mongoose.Schema({
 
 const Order = mongoose.model("Order", orderSchema);
 
+// Indexes for faster queries
+orderSchema.index({ userId: 1 }); // Index for user ID
+orderSchema.index({ status: 1 }); // Index for status
+
 // Validation for order creation
 function validateOrder(order) {
   const schema = Joi.object({

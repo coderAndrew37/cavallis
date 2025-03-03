@@ -15,6 +15,10 @@ const reviewSchema = new mongoose.Schema({
 
 const Review = mongoose.model("Review", reviewSchema);
 
+// Indexing for faster retrieval
+reviewSchema.index({ productId: 1 }); // Index for product ID
+reviewSchema.index({ userId: 1 }); // Index for user ID
+
 // Validation for review creation
 function validateReview(review) {
   const schema = Joi.object({

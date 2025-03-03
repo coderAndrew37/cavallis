@@ -24,6 +24,10 @@ const subscriptionSchema = new mongoose.Schema({
 
 const Subscription = mongoose.model("Subscription", subscriptionSchema);
 
+// Indexing for efficient querying
+subscriptionSchema.index({ userId: 1 }); // Index for user ID
+subscriptionSchema.index({ status: 1 }); // Index for status
+
 // Validation for subscription creation
 function validateSubscription(subscription) {
   const schema = Joi.object({

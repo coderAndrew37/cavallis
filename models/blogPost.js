@@ -15,6 +15,10 @@ const blogPostSchema = new mongoose.Schema({
 
 const BlogPost = mongoose.model("BlogPost", blogPostSchema);
 
+// Indexing for performance optimization
+blogPostSchema.index({ author: 1 }); // Index for author
+blogPostSchema.index({ category: 1 }); // Index for category
+
 // Validation for blog post creation
 function validateBlogPost(blogPost) {
   const schema = Joi.object({
