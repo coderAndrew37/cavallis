@@ -9,6 +9,9 @@ const userOrders = require("../routes/userOrders");
 const adminOrders = require("../routes/adminOrders");
 const newsletter = require("../routes/newsletter");
 const contact = require("../routes/contact");
+const adminUsersRoutes = require("./routes/adminUsers");
+const adminAnalyticsRoutes = require("./routes/adminAnalytics");
+const adminContentRoutes = require("./routes/adminContent");
 
 module.exports = function (app) {
   app.use("/api/users", users);
@@ -22,4 +25,7 @@ module.exports = function (app) {
   app.use("/api/admin/orders", adminOrders);
   app.use("/api/newsletter", newsletter);
   app.use("/api/contact", contact);
+  app.use("/api/admin/users", adminUsersRoutes);
+  app.use("/api/admin/analytics", adminAnalyticsRoutes);
+  app.use("/api/admin/content", adminContentRoutes);
 };

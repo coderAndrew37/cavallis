@@ -2,6 +2,7 @@ const express = require("express");
 const { Order, validateOrder } = require("../models/order");
 const { Product } = require("../models/product");
 const auth = require("../middleware/auth");
+const sendEmail = require("../utils/email");
 const router = express.Router();
 
 // Create an order (user only)
@@ -39,6 +40,19 @@ router.post("/", auth, async (req, res) => {
     });
 
     await order.save();
+
+    // Fetch the user's email
+    const user = await User.findById(req.user.userId);
+    if (!user) return res.status(404).json({ error: "User not found" });
+
+    //send order confirmation email
+    const subject = "Order Confirmation";
+    await sendEmail(user.email, subject, "orderConfirmation", {
+      name: user.name,
+      orderId: order._id,
+      totalAmount: totalAmount,
+    });
+
     res.status(201).json(order);
   } catch (error) {
     console.error("Error creating order:", error);

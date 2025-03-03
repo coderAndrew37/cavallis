@@ -118,4 +118,43 @@ router.get("/user/:userId", auth, isAdmin, async (req, res) => {
   }
 });
 
+// Get orders by date range (admin only)
+router.get("/by-date", auth, isAdmin, async (req, res) => {
+  const { startDate, endDate } = req.query;
+  if (!startDate || !endDate)
+    return res
+      .status(400)
+      .json({ message: "Start and end dates are required" });
+
+  try {
+    const orders = await Order.find({
+      createdAt: { $gte: new Date(startDate), $lte: new Date(endDate) },
+    }).lean();
+
+    res.json(orders);
+  } catch (error) {
+    console.error("Error fetching orders by date:", error);
+    res.status(500).json({ error: "Failed to fetch orders by date" });
+  }
+});
+
+// Export orders as CSV (admin only)
+router.get("/export", auth, isAdmin, async (req, res) => {
+  try {
+    const orders = await Order.find().lean();
+    const csv = orders
+      .map((order) => {
+        return `${order._id},${order.userId},${order.totalAmount},${order.status}`;
+      })
+      .join("\n");
+
+    res.header("Content-Type", "text/csv");
+    res.attachment("orders.csv");
+    res.send(csv);
+  } catch (error) {
+    console.error("Error exporting orders:", error);
+    res.status(500).json({ error: "Failed to export orders" });
+  }
+});
+
 module.exports = router;

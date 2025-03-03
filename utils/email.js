@@ -1,21 +1,16 @@
-const nodemailer = require("nodemailer");
+const ejs = require("ejs");
+const fs = require("fs");
+const path = require("path");
 
-// Create a transporter object using SMTP
-const transporter = nodemailer.createTransport({
-  service: "gmail", // Use Gmail or any other SMTP service
-  auth: {
-    user: process.env.EMAIL_USER, // Your email address
-    pass: process.env.EMAIL_PASSWORD, // Your email password or app-specific password
-  },
-});
+const sendEmail = async (to, subject, template, data) => {
+  const templatePath = path.join(__dirname, `../templates/${template}.ejs`);
+  const html = await ejs.renderFile(templatePath, data);
 
-// Function to send an email
-const sendEmail = async (to, subject, text) => {
   const mailOptions = {
-    from: process.env.EMAIL_USER, // Sender address
-    to, // Recipient address
-    subject, // Email subject
-    text, // Email body
+    from: process.env.EMAIL_USER,
+    to,
+    subject,
+    html,
   };
 
   try {
