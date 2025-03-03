@@ -1,5 +1,7 @@
 const express = require("express");
 const { Product, validateProduct } = require("../models/product");
+const auth = require("../middleware/auth");
+const isAdmin = require("../middleware/isAdmin");
 const router = express.Router();
 
 // Get all products with pagination, filtering, and sorting
@@ -53,7 +55,7 @@ router.get("/:id", async (req, res) => {
 });
 
 // Create a new product
-router.post("/", async (req, res) => {
+router.post("/", auth, isAdmin, async (req, res) => {
   const { error } = validateProduct(req.body);
   if (error) return res.status(400).json({ message: error.details[0].message });
 
@@ -68,7 +70,7 @@ router.post("/", async (req, res) => {
 });
 
 // Update a product
-router.put("/:id", async (req, res) => {
+router.put("/:id", auth, isAdmin, async (req, res) => {
   const { error } = validateProduct(req.body);
   if (error) return res.status(400).json({ message: error.details[0].message });
 
@@ -85,7 +87,7 @@ router.put("/:id", async (req, res) => {
 });
 
 // Delete a product
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", auth, isAdmin, async (req, res) => {
   try {
     const product = await Product.findByIdAndDelete(req.params.id);
     if (!product) return res.status(404).json({ error: "Product not found" });

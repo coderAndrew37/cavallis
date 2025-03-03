@@ -1,17 +1,27 @@
 const { verifyAccessToken } = require("../utils/jwt");
 
 module.exports = function (req, res, next) {
+  // Get the token from the header
   const token = req.header("x-auth-token");
-  if (!token)
+
+  // Check if no token
+  if (!token) {
     return res
       .status(401)
       .json({ message: "Access denied. No token provided" });
+  }
 
   try {
+    // Verify the token
     const decoded = verifyAccessToken(token);
     req.user = decoded; // Add user payload to request object
-    next();
+    next(); // Proceed to the next middleware/route
   } catch (error) {
-    res.status(400).json({ message: "Invalid token" });
+    if (error.name === "TokenExpiredError") {
+      return res
+        .status(401)
+        .json({ message: "Token expired. Please log in again" });
+    }
+    res.status(401).json({ message: "Invalid token" });
   }
 };
