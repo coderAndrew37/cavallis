@@ -8,10 +8,16 @@ const auth = require("../middleware/auth");
 const isAdmin = require("../middleware/isAdmin");
 const router = express.Router();
 
+// Helper function for handling errors
+const handleError = (res, error, defaultMessage) => {
+  console.error(error);
+  res.status(500).json({ error: defaultMessage });
+};
+
 // Create a blog post
 router.post("/", auth, async (req, res) => {
   const { error } = validateBlogPost(req.body);
-  if (error) return res.status(400).json({ message: error.details[0].message });
+  if (error) return res.status(400).json({ error: error.details[0].message });
 
   try {
     const blogPost = new BlogPost({
@@ -24,8 +30,7 @@ router.post("/", auth, async (req, res) => {
     await blogPost.save();
     res.status(201).json(blogPost);
   } catch (error) {
-    console.error("Error creating blog post:", error);
-    res.status(500).json({ error: "Failed to create blog post" });
+    handleError(res, error, "Failed to create blog post");
   }
 });
 
@@ -55,8 +60,7 @@ router.get("/", async (req, res) => {
       totalBlogPosts,
     });
   } catch (error) {
-    console.error("Error fetching blog posts:", error);
-    res.status(500).json({ error: "Failed to fetch blog posts" });
+    handleError(res, error, "Failed to fetch blog posts");
   }
 });
 
@@ -68,15 +72,14 @@ router.get("/:id", async (req, res) => {
       return res.status(404).json({ error: "Blog post not found" });
     res.json(blogPost);
   } catch (error) {
-    console.error("Error fetching blog post:", error);
-    res.status(500).json({ error: "Failed to fetch blog post" });
+    handleError(res, error, "Failed to fetch blog post");
   }
 });
 
-// Update a blog post
+// Update a blog post (admin only)
 router.put("/:id", auth, isAdmin, async (req, res) => {
   const { error } = validateBlogPost(req.body);
-  if (error) return res.status(400).json({ message: error.details[0].message });
+  if (error) return res.status(400).json({ error: error.details[0].message });
 
   try {
     const blogPost = await BlogPost.findOneAndUpdate(
@@ -94,12 +97,11 @@ router.put("/:id", auth, isAdmin, async (req, res) => {
 
     res.json(blogPost);
   } catch (error) {
-    console.error("Error updating blog post:", error);
-    res.status(500).json({ error: "Failed to update blog post" });
+    handleError(res, error, "Failed to update blog post");
   }
 });
 
-// Delete a blog post
+// Delete a blog post (admin only)
 router.delete("/:id", auth, isAdmin, async (req, res) => {
   try {
     const blogPost = await BlogPost.findOneAndDelete({
@@ -112,15 +114,14 @@ router.delete("/:id", auth, isAdmin, async (req, res) => {
 
     res.json({ message: "Blog post deleted successfully" });
   } catch (error) {
-    console.error("Error deleting blog post:", error);
-    res.status(500).json({ error: "Failed to delete blog post" });
+    handleError(res, error, "Failed to delete blog post");
   }
 });
 
 // Add a comment to a blog post
 router.post("/:id/comments", async (req, res) => {
   const { error } = validateComment(req.body);
-  if (error) return res.status(400).json({ message: error.details[0].message });
+  if (error) return res.status(400).json({ error: error.details[0].message });
 
   try {
     const blogPost = await BlogPost.findById(req.params.id);
@@ -137,8 +138,7 @@ router.post("/:id/comments", async (req, res) => {
     await blogPost.save();
     res.status(201).json({ message: "Comment added successfully" });
   } catch (error) {
-    console.error("Error adding comment:", error);
-    res.status(500).json({ error: "Failed to add comment" });
+    handleError(res, error, "Failed to add comment");
   }
 });
 
@@ -155,8 +155,7 @@ router.get("/:id/comments", async (req, res) => {
     );
     res.json(approvedComments);
   } catch (error) {
-    console.error("Error fetching comments:", error);
-    res.status(500).json({ error: "Failed to fetch comments" });
+    handleError(res, error, "Failed to fetch comments");
   }
 });
 
@@ -180,11 +179,9 @@ router.patch(
 
       res.json({ message: "Comment approved successfully", comment });
     } catch (error) {
-      console.error("Error approving comment:", error);
-      res.status(500).json({ error: "Failed to approve comment" });
+      handleError(res, error, "Failed to approve comment");
     }
   }
 );
 
 module.exports = router;
-// In this file, we define the routes for creating, reading, updating, and deleting blog posts. The routes are protected by the auth middleware, which ensures that only authenticated users can access them. We also use the validateBlogPost function from the blogPost model to validate the request body before creating or updating a blog post.
