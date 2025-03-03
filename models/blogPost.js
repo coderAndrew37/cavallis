@@ -1,5 +1,9 @@
-const mongoose = require("mongoose");
-const Joi = require("joi");
+const commentSchema = new mongoose.Schema({
+  name: { type: String, required: true }, // User's name for the comment
+  comment: { type: String, maxlength: 500 },
+  isApproved: { type: Boolean, default: false }, // Admin approval
+  createdAt: { type: Date, default: Date.now },
+});
 
 const blogPostSchema = new mongoose.Schema({
   title: { type: String, required: true },
@@ -10,14 +14,11 @@ const blogPostSchema = new mongoose.Schema({
     enum: ["Health", "Nutrition", "Recipes"],
     required: true,
   },
+  comments: [commentSchema], // Array of comments
   createdAt: { type: Date, default: Date.now },
 });
 
 const BlogPost = mongoose.model("BlogPost", blogPostSchema);
-
-// Indexing for performance optimization
-blogPostSchema.index({ author: 1 }); // Index for author
-blogPostSchema.index({ category: 1 }); // Index for category
 
 // Validation for blog post creation
 function validateBlogPost(blogPost) {
@@ -30,8 +31,13 @@ function validateBlogPost(blogPost) {
   return schema.validate(blogPost);
 }
 
-module.exports = { BlogPost, validateBlogPost };
-// In the blogPost.js file, we define a Mongoose schema for a blog post. The schema includes fields like title, content, author, category, and createdAt. The BlogPost model is created using this schema.
-// We also define a validation function validateBlogPost using Joi for blog post creation.
-// This module exports the BlogPost model and the validateBlogPost function.
-// The code snippets for the other models (review.js, distributor.js, user.js, product.js) follow a similar structure. Each file defines a Mongoose schema, a model, and a validation function using Joi.
+// Validation for comment creation
+function validateComment(comment) {
+  const schema = Joi.object({
+    name: Joi.string().min(3).max(50).required(), // User's name for the comment
+    comment: Joi.string().min(1).max(500).required(),
+  });
+  return schema.validate(comment);
+}
+
+module.exports = { BlogPost, validateBlogPost, validateComment };
