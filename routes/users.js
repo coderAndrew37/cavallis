@@ -2,6 +2,11 @@ const express = require("express");
 const { User, validateUser } = require("../models/user");
 const bcrypt = require("bcryptjs");
 const auth = require("../middleware/auth");
+const {
+  generateAccessToken,
+  generateRefreshToken,
+  verifyRefreshToken,
+} = require("../utils/jwt");
 const router = express.Router();
 
 // Register a new user
@@ -23,14 +28,14 @@ router.post("/register", async (req, res) => {
     name: req.body.name,
     email: req.body.email,
     password: hashedPassword,
-    role: req.body.role || "user",
+    role: req.body.role || "user", // Default role is "user"
   });
 
   await user.save();
 
-  // Generate tokens
-  const accessToken = generateAccessToken(user._id);
-  const refreshToken = generateRefreshToken(user._id);
+  // Generate tokens (auto-login after registration)
+  const accessToken = generateAccessToken(user._id, user.role);
+  const refreshToken = generateRefreshToken(user._id, user.role);
 
   // Send response
   res.status(201).json({ accessToken, refreshToken });
@@ -54,8 +59,8 @@ router.post("/login", async (req, res) => {
     return res.status(400).json({ message: "Invalid email or password" });
 
   // Generate tokens
-  const accessToken = generateAccessToken(user._id);
-  const refreshToken = generateRefreshToken(user._id);
+  const accessToken = generateAccessToken(user._id, user.role);
+  const refreshToken = generateRefreshToken(user._id, user.role);
 
   // Send response
   res.json({ accessToken, refreshToken });
@@ -69,10 +74,10 @@ router.post("/refresh-token", async (req, res) => {
 
   try {
     // Verify refresh token
-    const { userId } = verifyRefreshToken(refreshToken);
+    const { userId, role } = verifyRefreshToken(refreshToken);
 
     // Generate new access token
-    const accessToken = generateAccessToken(userId);
+    const accessToken = generateAccessToken(userId, role);
     res.json({ accessToken });
   } catch (error) {
     res.status(400).json({ message: "Invalid refresh token" });
@@ -83,6 +88,12 @@ router.post("/refresh-token", async (req, res) => {
 router.get("/me", auth, async (req, res) => {
   const user = await User.findById(req.user.userId).select("-password");
   res.json(user);
+});
+
+// Logout user (optional, since JWT tokens are stateless)
+router.post("/logout", auth, async (req, res) => {
+  // In a stateless system, logout is handled client-side by deleting the token
+  res.json({ message: "Logged out successfully" });
 });
 
 module.exports = router;
