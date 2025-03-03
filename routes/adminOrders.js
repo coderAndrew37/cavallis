@@ -1,53 +1,13 @@
 const express = require("express");
-const { Order, validateOrder } = require("../models/order");
-const { Product } = require("../models/product");
+const { Order } = require("../models/order");
+const { User } = require("../models/user");
 const auth = require("../middleware/auth");
+const isAdmin = require("../middleware/isAdmin");
+const sendEmail = require("../utils/email");
 const router = express.Router();
 
-// Create an order
-router.post("/", auth, async (req, res) => {
-  const { error } = validateOrder(req.body);
-  if (error) return res.status(400).json({ message: error.details[0].message });
-
-  try {
-    // Fetch product details for each item in the order
-    const items = await Promise.all(
-      req.body.items.map(async (item) => {
-        const product = await Product.findById(item.productId).lean();
-        if (!product) throw new Error(`Product not found: ${item.productId}`);
-        return {
-          productId: item.productId,
-          name: product.name,
-          quantity: item.quantity,
-          price: product.price,
-        };
-      })
-    );
-
-    // Calculate total amount
-    const totalAmount = items.reduce(
-      (total, item) => total + item.price * item.quantity,
-      0
-    );
-
-    // Create the order
-    const order = new Order({
-      userId: req.user.userId,
-      items,
-      totalAmount,
-      paymentMethod: req.body.paymentMethod,
-    });
-
-    await order.save();
-    res.status(201).json(order);
-  } catch (error) {
-    console.error("Error creating order:", error);
-    res.status(500).json({ error: "Failed to create order" });
-  }
-});
-
-// Get all orders with pagination and filtering
-router.get("/", auth, async (req, res) => {
+// Get all orders (admin only)
+router.get("/", auth, isAdmin, async (req, res) => {
   const page = parseInt(req.query.page, 10) || 1;
   const limit = parseInt(req.query.limit, 10) || 10;
   const status = req.query.status; // Optional status filter
@@ -77,8 +37,8 @@ router.get("/", auth, async (req, res) => {
   }
 });
 
-// Get order by ID
-router.get("/:id", auth, async (req, res) => {
+// Get order by ID (admin only)
+router.get("/:id", auth, isAdmin, async (req, res) => {
   try {
     const order = await Order.findById(req.params.id).lean();
     if (!order) return res.status(404).json({ error: "Order not found" });
@@ -89,8 +49,8 @@ router.get("/:id", auth, async (req, res) => {
   }
 });
 
-// Update order status
-router.patch("/:id/status", auth, async (req, res) => {
+// Update order status (admin only)
+router.patch("/:id/status", auth, isAdmin, async (req, res) => {
   const { status } = req.body;
   if (!status) return res.status(400).json({ error: "Status is required" });
 
@@ -101,6 +61,16 @@ router.patch("/:id/status", auth, async (req, res) => {
       { new: true }
     ).lean();
     if (!order) return res.status(404).json({ error: "Order not found" });
+
+    // Fetch the user's email
+    const user = await User.findById(order.userId);
+    if (!user) return res.status(404).json({ error: "User not found" });
+
+    // Send email to the user
+    const subject = "Your Order Status Has Been Updated";
+    const text = `Hi ${user.name},\n\nThe status of your order (ID: ${order._id}) has been updated to: ${status}.\n\nThank you for shopping with us!`;
+    await sendEmail(user.email, subject, text);
+
     res.json(order);
   } catch (error) {
     console.error("Error updating order status:", error);
@@ -108,8 +78,8 @@ router.patch("/:id/status", auth, async (req, res) => {
   }
 });
 
-// Delete an order
-router.delete("/:id", auth, async (req, res) => {
+// Delete an order (admin only)
+router.delete("/:id", auth, isAdmin, async (req, res) => {
   try {
     const order = await Order.findByIdAndDelete(req.params.id);
     if (!order) return res.status(404).json({ error: "Order not found" });
@@ -120,8 +90,8 @@ router.delete("/:id", auth, async (req, res) => {
   }
 });
 
-// Get orders by user ID
-router.get("/user/:userId", auth, async (req, res) => {
+// Get orders by user ID (admin only)
+router.get("/user/:userId", auth, isAdmin, async (req, res) => {
   const page = parseInt(req.query.page, 10) || 1;
   const limit = parseInt(req.query.limit, 10) || 10;
 
