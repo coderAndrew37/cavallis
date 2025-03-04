@@ -156,19 +156,3 @@ router.get("/suggestions", async (req, res) => {
 });
 
 module.exports = router;
-
-/**
- * @api {get} /api/products Get all products
- * @apiName GetProducts
- * @apiGroup Products
- *
- * @apiParam {Number} [page=1] Page number
- * @apiParam {Number} [limit=10] Number of products to return per page
- * @apiParam {String} [category] Product category
- * @apiParam {String} [sort] Sort products by price (asc/desc) or rating (desc)
- *
- * @apiSuccess {Object[]} products Array of products
- * @apiSuccess {Number} currentPage Current page number
- * @apiSuccess {Number} totalPages Total number of pages
- * @apiSuccess {Number} totalProducts Total number of products
- */

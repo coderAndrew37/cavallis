@@ -1,9 +1,8 @@
 const express = require("express");
 const { User, validateUser } = require("../models/user");
 const bcrypt = require("bcryptjs");
+const rateLimit = require("express-rate-limit");
 const auth = require("../middleware/auth");
-const crypto = require("crypto");
-const sendEmail = require("../utils/email");
 const {
   generateAccessToken,
   generateRefreshToken,
@@ -14,8 +13,15 @@ const {
 
 const router = express.Router();
 
+// ✅ Set different rate limits for login and register (Anti-brute force)
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10, // ✅ Allow 10 login/register attempts per 15 minutes
+  message: "Too many login/register attempts, please try again later.",
+});
+
 // ✅ Register a new user
-router.post("/register", async (req, res) => {
+router.post("/register", authLimiter, async (req, res) => {
   const { error } = validateUser(req.body);
   if (error) return res.status(400).json({ message: error.details[0].message });
 
@@ -36,7 +42,6 @@ router.post("/register", async (req, res) => {
   const accessToken = generateAccessToken(user._id, user.role);
   const refreshToken = generateRefreshToken(user._id, user.role);
 
-  // ✅ Store tokens in secure HTTP-only cookies
   setAuthCookies(res, accessToken, refreshToken);
 
   res
@@ -45,7 +50,7 @@ router.post("/register", async (req, res) => {
 });
 
 // ✅ Login user
-router.post("/login", async (req, res) => {
+router.post("/login", authLimiter, async (req, res) => {
   const { email, password } = req.body;
   if (!email || !password)
     return res.status(400).json({ message: "Email and password are required" });
@@ -78,7 +83,7 @@ router.post("/refresh-token", async (req, res) => {
     res.cookie("accessToken", newAccessToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "Strict",
+      sameSite: "None",
       maxAge: 15 * 60 * 1000, // 15 minutes
     });
 

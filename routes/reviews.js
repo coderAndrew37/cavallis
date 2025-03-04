@@ -3,74 +3,78 @@ const { Review, validateReview } = require("../models/review");
 const { Product } = require("../models/product");
 const auth = require("../middleware/auth");
 const isAdmin = require("../middleware/isAdmin");
-const upload = require("../utils/upload"); // Multer for image uploads
+const upload = require("../utils/upload"); // Import multer config
 const router = express.Router();
 
-// Create a review (user only)
-router.post("/", upload.single("image"), async (req, res) => {
+// ✅ Create a Review (Requires Authentication)
+router.post("/", auth, upload.single("image"), async (req, res) => {
   const { error } = validateReview(req.body);
   if (error) return res.status(400).json({ message: error.details[0].message });
 
   try {
-    // Check if the product exists (if productId is provided)
+    // Validate if the product exists
     if (req.body.productId) {
       const product = await Product.findById(req.body.productId);
       if (!product) return res.status(404).json({ error: "Product not found" });
     }
 
-    // Create the review
     const review = new Review({
-      userId: req.body.userId || null, // Optional for general reviews
-      productId: req.body.productId || null, // Optional for general reviews
-      name: req.body.name, // User's name for general reviews
+      userId: req.user.userId,
+      productId: req.body.productId || null,
+      name: req.body.name,
       rating: req.body.rating,
       comment: req.body.comment,
-      image: req.file ? req.file.path : null, // Save the file path if image is uploaded
-      isApproved: false, // Default to false for admin approval
+      image: req.file ? `/uploads/${req.file.filename}` : null,
+      isApproved: false, // Pending Admin Approval
     });
 
     await review.save();
-    res.status(201).json(review);
+    res
+      .status(201)
+      .json({ message: "Review submitted! Pending admin approval.", review });
   } catch (error) {
     console.error("Error creating review:", error);
     res.status(500).json({ error: "Failed to create review" });
   }
 });
 
-// Get all approved reviews (sorted by rating and likes)
+// ✅ Get All Approved Reviews
 router.get("/", async (req, res) => {
   const page = parseInt(req.query.page, 10) || 1;
   const limit = parseInt(req.query.limit, 10) || 10;
 
   try {
     const reviews = await Review.find({ isApproved: true })
-      .sort({ rating: -1, likes: -1 }) // Sort by rating (desc) and likes (desc)
+      .sort({ rating: -1, likes: -1 })
       .skip((page - 1) * limit)
       .limit(limit)
       .lean();
 
+    // Append full image URL
+    reviews.forEach((review) => {
+      if (review.image) {
+        review.image = `${process.env.BACKEND_URL || "http://localhost:4000"}${
+          review.image
+        }`;
+      }
+    });
+
     const totalReviews = await Review.countDocuments({ isApproved: true });
     const totalPages = Math.ceil(totalReviews / limit);
 
-    res.json({
-      reviews,
-      currentPage: page,
-      totalPages,
-      totalReviews,
-    });
+    res.json({ reviews, currentPage: page, totalPages, totalReviews });
   } catch (error) {
     console.error("Error fetching reviews:", error);
     res.status(500).json({ error: "Failed to fetch reviews" });
   }
 });
 
-// Like a review (user only)
+// ✅ Like a Review (User Only)
 router.post("/:id/like", auth, async (req, res) => {
   try {
     const review = await Review.findById(req.params.id);
     if (!review) return res.status(404).json({ error: "Review not found" });
 
-    // Increment likes
     review.likes += 1;
     await review.save();
 
@@ -81,7 +85,7 @@ router.post("/:id/like", auth, async (req, res) => {
   }
 });
 
-// Approve a review (admin only)
+// ✅ Approve a Review (Admin Only)
 router.patch("/:id/approve", auth, isAdmin, async (req, res) => {
   try {
     const review = await Review.findByIdAndUpdate(
