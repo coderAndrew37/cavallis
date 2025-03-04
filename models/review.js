@@ -1,3 +1,6 @@
+const mongoose = require("mongoose");
+const Joi = require("joi");
+
 const reviewSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" }, // Optional for general reviews
   productId: { type: mongoose.Schema.Types.ObjectId, ref: "Product" }, // Optional for general reviews

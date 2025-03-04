@@ -2,123 +2,123 @@ const express = require("express");
 const { User, validateUser } = require("../models/user");
 const bcrypt = require("bcryptjs");
 const auth = require("../middleware/auth");
+const crypto = require("crypto");
+const sendEmail = require("../utils/email");
 const {
   generateAccessToken,
   generateRefreshToken,
   verifyRefreshToken,
+  setAuthCookies,
+  clearAuthCookies,
 } = require("../utils/jwt");
-const crypto = require("crypto");
-const sendEmail = require("../utils/email");
+
 const router = express.Router();
 
-// Register a new user
+// ✅ Register a new user
 router.post("/register", async (req, res) => {
-  // Validate request body
   const { error } = validateUser(req.body);
   if (error) return res.status(400).json({ message: error.details[0].message });
 
-  // Check if user already exists
   let user = await User.findOne({ email: req.body.email });
   if (user) return res.status(400).json({ message: "User already registered" });
 
-  // Hash password
-  const salt = await bcrypt.genSalt(10);
-  const hashedPassword = await bcrypt.hash(req.body.password, salt);
+  const hashedPassword = await bcrypt.hash(req.body.password, 10);
 
-  // Create new user
   user = new User({
     name: req.body.name,
     email: req.body.email,
     password: hashedPassword,
-    role: req.body.role || "user", // Default role is "user"
+    role: req.body.role || "user",
   });
 
   await user.save();
 
-  // Generate tokens (auto-login after registration)
   const accessToken = generateAccessToken(user._id, user.role);
   const refreshToken = generateRefreshToken(user._id, user.role);
 
-  // Send response
-  res.status(201).json({ accessToken, refreshToken });
+  // ✅ Store tokens in secure HTTP-only cookies
+  setAuthCookies(res, accessToken, refreshToken);
+
+  res
+    .status(201)
+    .json({ user: { id: user._id, name: user.name, email: user.email } });
 });
 
-// Login user
+// ✅ Login user
 router.post("/login", async (req, res) => {
-  // Validate request body
   const { email, password } = req.body;
   if (!email || !password)
     return res.status(400).json({ message: "Email and password are required" });
 
-  // Check if user exists
   const user = await User.findOne({ email });
   if (!user)
     return res.status(400).json({ message: "Invalid email or password" });
 
-  // Verify password
   const validPassword = await bcrypt.compare(password, user.password);
   if (!validPassword)
     return res.status(400).json({ message: "Invalid email or password" });
 
-  // Generate tokens
   const accessToken = generateAccessToken(user._id, user.role);
   const refreshToken = generateRefreshToken(user._id, user.role);
 
-  // Send response
-  res.json({ accessToken, refreshToken });
+  setAuthCookies(res, accessToken, refreshToken);
+
+  res.json({ user: { id: user._id, name: user.name, email: user.email } });
 });
 
-// Refresh access token
+// ✅ Refresh access token
 router.post("/refresh-token", async (req, res) => {
-  const { refreshToken } = req.body;
-  if (!refreshToken)
-    return res.status(400).json({ message: "Refresh token is required" });
+  const refreshToken = req.cookies.refreshToken;
+  if (!refreshToken) return res.status(401).json({ message: "Unauthorized" });
 
   try {
-    // Verify refresh token
     const { userId, role } = verifyRefreshToken(refreshToken);
+    const newAccessToken = generateAccessToken(userId, role);
 
-    // Generate new access token
-    const accessToken = generateAccessToken(userId, role);
-    res.json({ accessToken });
-  } catch (error) {
-    res.status(400).json({ message: "Invalid refresh token" });
+    res.cookie("accessToken", newAccessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "Strict",
+      maxAge: 15 * 60 * 1000, // 15 minutes
+    });
+
+    res.json({ success: true });
+  } catch {
+    res.status(403).json({ message: "Invalid refresh token" });
   }
 });
 
-// Get current user
+// ✅ Get current user
 router.get("/me", auth, async (req, res) => {
   const user = await User.findById(req.user.userId).select("-password");
   res.json(user);
 });
 
-// Logout user (optional, since JWT tokens are stateless)
-router.post("/logout", auth, async (req, res) => {
-  // In a stateless system, logout is handled client-side by deleting the token
+// ✅ Logout user (clears cookies)
+router.post("/logout", (req, res) => {
+  clearAuthCookies(res);
   res.json({ message: "Logged out successfully" });
 });
 
-// Forgot password
+// ✅ Forgot password
 router.post("/forgot-password", async (req, res) => {
   const { email } = req.body;
   if (!email) return res.status(400).json({ message: "Email is required" });
 
   try {
-    // Find the user
     const user = await User.findOne({ email });
     if (!user) return res.status(404).json({ message: "User not found" });
 
-    // Generate a reset token
     const resetToken = crypto.randomBytes(20).toString("hex");
     user.resetPasswordToken = resetToken;
-    user.resetPasswordExpires = Date.now() + 3600000; // Token expires in 1 hour
+    user.resetPasswordExpires = Date.now() + 3600000; // 1 hour
 
     await user.save();
 
-    // Send reset email
-    const resetUrl = `${process.env.FRONTEND_URL}/${resetToken}`;
+    const resetUrl = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
     const subject = "Password Reset Request";
     const text = `You requested a password reset. Click the link below to reset your password:\n\n${resetUrl}`;
+
     await sendEmail(user.email, subject, text);
 
     res.json({ message: "Password reset email sent" });
@@ -130,7 +130,7 @@ router.post("/forgot-password", async (req, res) => {
   }
 });
 
-// Reset password
+// ✅ Reset password
 router.post("/reset-password/:token", async (req, res) => {
   const { token } = req.params;
   const { password } = req.body;
@@ -138,17 +138,14 @@ router.post("/reset-password/:token", async (req, res) => {
     return res.status(400).json({ message: "Password is required" });
 
   try {
-    // Find the user by reset token
     const user = await User.findOne({
       resetPasswordToken: token,
-      resetPasswordExpires: { $gt: Date.now() }, // Check if token is still valid
+      resetPasswordExpires: { $gt: Date.now() },
     });
     if (!user)
       return res.status(400).json({ message: "Invalid or expired token" });
 
-    // Hash the new password
-    const salt = await bcrypt.genSalt(10);
-    user.password = await bcrypt.hash(password, salt);
+    user.password = await bcrypt.hash(password, 10);
     user.resetPasswordToken = undefined;
     user.resetPasswordExpires = undefined;
 

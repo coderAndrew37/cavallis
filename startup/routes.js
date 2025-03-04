@@ -9,12 +9,12 @@ const userOrders = require("../routes/userOrders");
 const adminOrders = require("../routes/adminOrders");
 const newsletter = require("../routes/newsletter");
 const contact = require("../routes/contact");
-const adminUsersRoutes = require("./routes/adminUsers");
-const adminAnalyticsRoutes = require("./routes/adminAnalytics");
-const adminContentRoutes = require("./routes/adminContent");
+const adminUsersRoutes = require("../routes/adminUsers");
+const adminAnalyticsRoutes = require("../routes/adminTrends");
+const adminContentRoutes = require("../routes/adminContent");
 
 module.exports = function (app) {
-  app.use("/api/users", users);
+  app.use("/api/auth", users);
   app.use("/api/products", products);
   app.use("/api/reviews", reviews);
   app.use("/api/distributors", distributors);

@@ -1,3 +1,6 @@
+const mongoose = require("mongoose");
+const Joi = require("joi");
+
 const commentSchema = new mongoose.Schema({
   name: { type: String, required: true }, // User's name for the comment
   comment: { type: String, maxlength: 500 },
