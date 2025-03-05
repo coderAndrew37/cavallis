@@ -12,7 +12,7 @@ const contact = require("../routes/contact");
 const adminUsersRoutes = require("../routes/adminUsers");
 const adminAnalyticsRoutes = require("../routes/adminTrends");
 const adminContentRoutes = require("../routes/adminContent");
-
+const referral = require("../routes/refferals");
 module.exports = function (app) {
   app.use("/api/auth", users);
   app.use("/api/products", products);
@@ -28,4 +28,5 @@ module.exports = function (app) {
   app.use("/api/admin/users", adminUsersRoutes);
   app.use("/api/admin/analytics", adminAnalyticsRoutes);
   app.use("/api/admin/content", adminContentRoutes);
+  app.use("/api/refferal", referral);
 };

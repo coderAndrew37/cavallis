@@ -41,17 +41,17 @@ router.post("/", auth, async (req, res) => {
 
     await order.save();
 
-    // Fetch the user's email
+    // ✅ Reward Referrer
     const user = await User.findById(req.user.userId);
-    if (!user) return res.status(404).json({ error: "User not found" });
-
-    //send order confirmation email
-    const subject = "Order Confirmation";
-    await sendEmail(user.email, subject, "orderConfirmation", {
-      name: user.name,
-      orderId: order._id,
-      totalAmount: totalAmount,
-    });
+    if (user && user.referredBy) {
+      const referrer = await User.findOne({ referralCode: user.referredBy });
+      if (referrer) {
+        const commission = totalAmount * 0.05; // 5% reward
+        referrer.referralRewards += commission;
+        referrer.withdrawableBalance += commission;
+        await referrer.save();
+      }
+    }
 
     res.status(201).json(order);
   } catch (error) {

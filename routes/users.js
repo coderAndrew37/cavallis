@@ -23,13 +23,23 @@ const authLimiter = rateLimit({
   message: "Too many login/register attempts, please try again later.",
 });
 
-// ✅ Register User
+// ✅ Register User (Referral Code is Optional)
 router.post("/register", authLimiter, async (req, res) => {
   const { error } = validateUser(req.body);
   if (error) return res.status(400).json({ message: error.details[0].message });
 
   let user = await User.findOne({ email: req.body.email });
   if (user) return res.status(400).json({ message: "User already registered" });
+
+  let referrer = null;
+
+  // ✅ If referral code is provided, validate it
+  if (req.body.referralCode) {
+    referrer = await User.findOne({ referralCode: req.body.referralCode });
+    if (!referrer) {
+      return res.status(400).json({ message: "Invalid referral code" });
+    }
+  }
 
   const hashedPassword = await bcrypt.hash(req.body.password, 10);
 
@@ -38,6 +48,8 @@ router.post("/register", authLimiter, async (req, res) => {
     email: req.body.email,
     password: hashedPassword,
     role: req.body.role || "user",
+    referralCode: null, // ✅ Default: User is NOT in the referral program yet
+    referredBy: referrer ? referrer._id : null, // ✅ Store referrer if available
   });
 
   await user.save();
@@ -47,31 +59,15 @@ router.post("/register", authLimiter, async (req, res) => {
 
   setAuthCookies(res, accessToken, refreshToken);
 
-  res
-    .status(201)
-    .json({ user: { id: user._id, name: user.name, email: user.email } });
-});
-
-// ✅ Login User
-router.post("/login", authLimiter, async (req, res) => {
-  const { email, password } = req.body;
-  if (!email || !password)
-    return res.status(400).json({ message: "Email and password are required" });
-
-  const user = await User.findOne({ email });
-  if (!user)
-    return res.status(400).json({ message: "Invalid email or password" });
-
-  const validPassword = await bcrypt.compare(password, user.password);
-  if (!validPassword)
-    return res.status(400).json({ message: "Invalid email or password" });
-
-  const accessToken = generateAccessToken(user._id, user.role);
-  const refreshToken = generateRefreshToken(user._id, user.role);
-
-  setAuthCookies(res, accessToken, refreshToken);
-
-  res.json({ user: { id: user._id, name: user.name, email: user.email } });
+  res.status(201).json({
+    user: {
+      id: user._id,
+      name: user.name,
+      email: user.email,
+      referralCode: user.referralCode, // Will be `null` until they opt in
+      referredBy: referrer ? referrer.referralCode : null,
+    },
+  });
 });
 
 // ✅ Refresh Access Token
@@ -103,10 +99,32 @@ router.get("/me", auth, async (req, res) => {
   res.json(user);
 });
 
-// ✅ Logout User
-router.post("/logout", (req, res) => {
-  clearAuthCookies(res);
-  res.json({ message: "Logged out successfully" });
+// ✅ Opt-in to Referral Program (Authenticated Users)
+router.post("/referral/opt-in", auth, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.userId);
+
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    // ✅ If user already has a referral code, prevent generating a new one
+    if (user.referralCode) {
+      return res
+        .status(400)
+        .json({ message: "You are already in the referral program" });
+    }
+
+    // ✅ Generate a unique referral code
+    user.referralCode = generateReferralCode();
+    await user.save();
+
+    res.json({
+      message: "You have joined the referral program!",
+      referralCode: user.referralCode,
+    });
+  } catch (error) {
+    console.error("Error opting into referral program:", error);
+    res.status(500).json({ message: "Failed to opt into referral program" });
+  }
 });
 
 // ✅ Logout user (clears cookies)
@@ -175,5 +193,10 @@ router.post("/reset-password/:token", async (req, res) => {
     res.status(500).json({ error: "Failed to reset password" });
   }
 });
+
+// ✅ Function to Generate a Unique Referral Code
+function generateReferralCode() {
+  return Math.random().toString(36).substring(2, 8).toUpperCase(); // Example: "A1B2C3"
+}
 
 module.exports = router;
