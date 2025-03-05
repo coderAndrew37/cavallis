@@ -8,26 +8,38 @@ const generateAccessToken = (userId, role) => {
   });
 };
 
-// 🔹 Generate Refresh Token (Longer-lived)
+// 🔹 Generate Refresh Token (Long-lived)
 const generateRefreshToken = (userId, role) => {
   return jwt.sign({ userId, role }, process.env.JWT_REFRESH_SECRET, {
     expiresIn: "7d", // 7 days
   });
 };
 
+// 🔹 Verify Access Token
+const verifyAccessToken = (token) => {
+  return jwt.verify(token, process.env.JWT_ACCESS_SECRET);
+};
+
+// 🔹 Verify Refresh Token
+const verifyRefreshToken = (token) => {
+  return jwt.verify(token, process.env.JWT_REFRESH_SECRET);
+};
+
 // 🔹 Set Secure HTTP-Only Cookies
 const setAuthCookies = (res, accessToken, refreshToken) => {
+  const isProduction = process.env.NODE_ENV === "production";
+
   res.cookie("accessToken", accessToken, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production" ? true : false,
-    sameSite: "None", // ✅ Needed for cross-origin requests
+    secure: isProduction,
+    sameSite: isProduction ? "None" : "Lax",
     maxAge: 15 * 60 * 1000, // 15 minutes
   });
 
   res.cookie("refreshToken", refreshToken, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production" ? true : false,
-    sameSite: "None",
+    secure: isProduction,
+    sameSite: isProduction ? "None" : "Lax",
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
   });
 };
@@ -41,6 +53,8 @@ const clearAuthCookies = (res) => {
 module.exports = {
   generateAccessToken,
   generateRefreshToken,
+  verifyAccessToken,
+  verifyRefreshToken,
   setAuthCookies,
   clearAuthCookies,
 };

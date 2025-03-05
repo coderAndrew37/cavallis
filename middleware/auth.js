@@ -1,8 +1,8 @@
 const { verifyAccessToken } = require("../utils/jwt");
 
 module.exports = function (req, res, next) {
-  // Get the token from the header
-  const token = req.header("x-auth-token");
+  // Get token from cookies or header
+  const token = req.cookies?.accessToken || req.header("x-auth-token");
 
   // Check if no token
   if (!token) {

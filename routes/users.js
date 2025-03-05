@@ -2,6 +2,9 @@ const express = require("express");
 const { User, validateUser } = require("../models/user");
 const bcrypt = require("bcryptjs");
 const rateLimit = require("express-rate-limit");
+const crypto = require("crypto");
+const sendEmail = require("../utils/email");
+
 const auth = require("../middleware/auth");
 const {
   generateAccessToken,
@@ -13,14 +16,14 @@ const {
 
 const router = express.Router();
 
-// ✅ Set different rate limits for login and register (Anti-brute force)
+// ✅ Rate Limit (Anti-brute force)
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 10, // ✅ Allow 10 login/register attempts per 15 minutes
   message: "Too many login/register attempts, please try again later.",
 });
 
-// ✅ Register a new user
+// ✅ Register User
 router.post("/register", authLimiter, async (req, res) => {
   const { error } = validateUser(req.body);
   if (error) return res.status(400).json({ message: error.details[0].message });
@@ -49,7 +52,7 @@ router.post("/register", authLimiter, async (req, res) => {
     .json({ user: { id: user._id, name: user.name, email: user.email } });
 });
 
-// ✅ Login user
+// ✅ Login User
 router.post("/login", authLimiter, async (req, res) => {
   const { email, password } = req.body;
   if (!email || !password)
@@ -71,7 +74,7 @@ router.post("/login", authLimiter, async (req, res) => {
   res.json({ user: { id: user._id, name: user.name, email: user.email } });
 });
 
-// ✅ Refresh access token
+// ✅ Refresh Access Token
 router.post("/refresh-token", async (req, res) => {
   const refreshToken = req.cookies.refreshToken;
   if (!refreshToken) return res.status(401).json({ message: "Unauthorized" });
@@ -89,14 +92,21 @@ router.post("/refresh-token", async (req, res) => {
 
     res.json({ success: true });
   } catch {
+    res.clearCookie("refreshToken", { sameSite: "None", secure: true });
     res.status(403).json({ message: "Invalid refresh token" });
   }
 });
 
-// ✅ Get current user
+// ✅ Get Current User
 router.get("/me", auth, async (req, res) => {
   const user = await User.findById(req.user.userId).select("-password");
   res.json(user);
+});
+
+// ✅ Logout User
+router.post("/logout", (req, res) => {
+  clearAuthCookies(res);
+  res.json({ message: "Logged out successfully" });
 });
 
 // ✅ Logout user (clears cookies)
@@ -124,7 +134,10 @@ router.post("/forgot-password", async (req, res) => {
     const subject = "Password Reset Request";
     const text = `You requested a password reset. Click the link below to reset your password:\n\n${resetUrl}`;
 
-    await sendEmail(user.email, subject, text);
+    await sendEmail(user.email, subject, "forgot-password", {
+      name: user.name,
+      resetUrl,
+    });
 
     res.json({ message: "Password reset email sent" });
   } catch (error) {
