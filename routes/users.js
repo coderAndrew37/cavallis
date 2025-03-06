@@ -93,13 +93,55 @@ router.post("/refresh-token", async (req, res) => {
   }
 });
 
+// ✅ Login User
+router.post("/login", authLimiter, async (req, res) => {
+  const { email, password } = req.body;
+
+  // Validate input
+  if (!email || !password) {
+    return res.status(400).json({ message: "Email and password are required" });
+  }
+
+  try {
+    // Find user by email
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(400).json({ message: "Invalid email or password" });
+    }
+
+    // Compare passwords
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      return res.status(400).json({ message: "Invalid email or password" });
+    }
+
+    // Generate tokens
+    const accessToken = generateAccessToken(user._id, user.role);
+    const refreshToken = generateRefreshToken(user._id, user.role);
+
+    // Set cookies
+    setAuthCookies(res, accessToken, refreshToken);
+
+    // Send response
+    res.json({
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+      },
+    });
+  } catch (error) {
+    console.error("Error in login:", error);
+    res.status(500).json({ message: "Failed to process login request" });
+  }
+});
+
 // ✅ Get Current User
 router.get("/me", auth, async (req, res) => {
   const user = await User.findById(req.user.userId).select("-password");
   res.json(user);
 });
-
-
 
 // ✅ Logout user (clears cookies)
 router.post("/logout", (req, res) => {
@@ -107,26 +149,26 @@ router.post("/logout", (req, res) => {
   res.json({ message: "Logged out successfully" });
 });
 
-// ✅ Forgot password
-router.post("/forgot-password", async (req, res) => {
+// ✅ Forgot Password
+router.post("/forgot-password", authLimiter, async (req, res) => {
   const { email } = req.body;
   if (!email) return res.status(400).json({ message: "Email is required" });
 
   try {
+    // Find user by email
     const user = await User.findOne({ email });
     if (!user) return res.status(404).json({ message: "User not found" });
 
+    // Generate reset token
     const resetToken = crypto.randomBytes(20).toString("hex");
     user.resetPasswordToken = resetToken;
     user.resetPasswordExpires = Date.now() + 3600000; // 1 hour
 
     await user.save();
 
+    // Send reset password email
     const resetUrl = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
-    const subject = "Password Reset Request";
-    const text = `You requested a password reset. Click the link below to reset your password:\n\n${resetUrl}`;
-
-    await sendEmail(user.email, subject, "forgot-password", {
+    await sendEmail(user.email, "Password Reset Request", "forgot-password", {
       name: user.name,
       resetUrl,
     });
@@ -136,25 +178,33 @@ router.post("/forgot-password", async (req, res) => {
     console.error("Error in forgot password:", error);
     res
       .status(500)
-      .json({ error: "Failed to process forgot password request" });
+      .json({ message: "Failed to process forgot password request" });
   }
 });
 
-// ✅ Reset password
-router.post("/reset-password/:token", async (req, res) => {
+// ✅ Reset Password
+router.post("/reset-password/:token", authLimiter, async (req, res) => {
   const { token } = req.params;
   const { password } = req.body;
-  if (!password)
-    return res.status(400).json({ message: "Password is required" });
+
+  // Validate input
+  if (!password || password.length < 8) {
+    return res
+      .status(400)
+      .json({ message: "Password must be at least 8 characters long" });
+  }
 
   try {
+    // Find user by reset token
     const user = await User.findOne({
       resetPasswordToken: token,
       resetPasswordExpires: { $gt: Date.now() },
     });
-    if (!user)
+    if (!user) {
       return res.status(400).json({ message: "Invalid or expired token" });
+    }
 
+    // Hash new password
     user.password = await bcrypt.hash(password, 10);
     user.resetPasswordToken = undefined;
     user.resetPasswordExpires = undefined;
@@ -164,11 +214,8 @@ router.post("/reset-password/:token", async (req, res) => {
     res.json({ message: "Password reset successfully" });
   } catch (error) {
     console.error("Error in reset password:", error);
-    res.status(500).json({ error: "Failed to reset password" });
+    res.status(500).json({ message: "Failed to reset password" });
   }
 });
-
-// ✅ Function to Generate a Unique Referral Code
-
 
 module.exports = router;
