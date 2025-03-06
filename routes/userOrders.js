@@ -11,7 +11,6 @@ router.post("/", auth, async (req, res) => {
   if (error) return res.status(400).json({ message: error.details[0].message });
 
   try {
-    // Fetch product details for each item in the order
     const items = await Promise.all(
       req.body.items.map(async (item) => {
         const product = await Product.findById(item.productId).lean();
@@ -25,13 +24,11 @@ router.post("/", auth, async (req, res) => {
       })
     );
 
-    // Calculate total amount
     const totalAmount = items.reduce(
       (total, item) => total + item.price * item.quantity,
       0
     );
 
-    // Create the order
     const order = new Order({
       userId: req.user.userId,
       items,
@@ -41,14 +38,14 @@ router.post("/", auth, async (req, res) => {
 
     await order.save();
 
-    // ✅ Reward Referrer
+    // ✅ Reward the Referrer (if applicable)
     const user = await User.findById(req.user.userId);
-    if (user && user.referredBy) {
+    if (user.referredBy) {
       const referrer = await User.findOne({ referralCode: user.referredBy });
       if (referrer) {
-        const commission = totalAmount * 0.05; // 5% reward
-        referrer.referralRewards += commission;
-        referrer.withdrawableBalance += commission;
+        const rewardAmount = totalAmount * 0.1;
+        referrer.referralRewards += rewardAmount;
+        referrer.withdrawableBalance += rewardAmount;
         await referrer.save();
       }
     }

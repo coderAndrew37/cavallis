@@ -78,6 +78,31 @@ const seedProducts = [
     isBestseller: false,
     discountBadge: "",
   },
+
+  {
+    name: "Detox Tea",
+    description: "A refreshing tea to cleanse your body.",
+    price: 1500,
+    category: "Detox",
+    benefits: ["Cleanses the body", "Boosts energy"],
+    ingredients: ["Green tea", "Mint"],
+    images: ["detox-tea.jpg"],
+    stock: 10,
+    isBestseller: true,
+    discountBadge: "10% OFF",
+  },
+  {
+    name: "Weight Loss Supplement",
+    description: "Helps in burning fat and losing weight.",
+    price: 2500,
+    category: "Weight Loss",
+    benefits: ["Burns fat", "Boosts metabolism"],
+    ingredients: ["Garcinia Cambogia", "Green Coffee Extract"],
+    images: ["weight-loss-supplement.jpg"],
+    stock: 5,
+    isBestseller: false,
+    discountBadge: "",
+  },
 ];
 
 async function seedDB() {

@@ -10,7 +10,17 @@ const corsOptions = {
 
 exports.cors = cors(corsOptions);
 exports.helmet = helmet();
+
+// Rate limiting with environment-specific configurations
+const isDevelopment = process.env.NODE_ENV === "development";
+
 exports.limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // Limit each IP to 100 requests per windowMs
+  max: isDevelopment ? 1000 : 100, // Higher limit in development
+  handler: (req, res) => {
+    res.status(429).json({
+      message: "Too many requests, please try again later.",
+    });
+    logger.warn(`Rate limit exceeded by IP: ${req.ip}`);
+  },
 });

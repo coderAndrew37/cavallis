@@ -99,33 +99,7 @@ router.get("/me", auth, async (req, res) => {
   res.json(user);
 });
 
-// ✅ Opt-in to Referral Program (Authenticated Users)
-router.post("/referral/opt-in", auth, async (req, res) => {
-  try {
-    const user = await User.findById(req.user.userId);
 
-    if (!user) return res.status(404).json({ message: "User not found" });
-
-    // ✅ If user already has a referral code, prevent generating a new one
-    if (user.referralCode) {
-      return res
-        .status(400)
-        .json({ message: "You are already in the referral program" });
-    }
-
-    // ✅ Generate a unique referral code
-    user.referralCode = generateReferralCode();
-    await user.save();
-
-    res.json({
-      message: "You have joined the referral program!",
-      referralCode: user.referralCode,
-    });
-  } catch (error) {
-    console.error("Error opting into referral program:", error);
-    res.status(500).json({ message: "Failed to opt into referral program" });
-  }
-});
 
 // ✅ Logout user (clears cookies)
 router.post("/logout", (req, res) => {
@@ -195,8 +169,6 @@ router.post("/reset-password/:token", async (req, res) => {
 });
 
 // ✅ Function to Generate a Unique Referral Code
-function generateReferralCode() {
-  return Math.random().toString(36).substring(2, 8).toUpperCase(); // Example: "A1B2C3"
-}
+
 
 module.exports = router;
