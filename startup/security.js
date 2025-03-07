@@ -5,6 +5,7 @@ const rateLimit = require("express-rate-limit");
 // ✅ Fix CORS: Ensure frontend requests are allowed
 const corsOptions = {
   origin: process.env.FRONTEND_URL || "http://localhost:5173", // ✅ Make sure this matches frontend
+  methods: ["GET", "POST", "PUT", "DELETE"], // Allow common methods
   credentials: true, // ✅ This allows cookies to be sent
 };
 
