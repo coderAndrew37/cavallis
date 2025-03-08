@@ -456,3 +456,69 @@
 2025-03-07T09:42:12.115Z [INFO]: Connected to MongoDB
 2025-03-07T09:44:40.854Z [INFO]: Server running on port 4000
 2025-03-07T09:44:40.917Z [INFO]: Connected to MongoDB
+2025-03-07T09:51:44.744Z [INFO]: Connected to MongoDB
+2025-03-07T09:51:52.947Z [INFO]: Connected to MongoDB
+2025-03-07T09:55:27.473Z [INFO]: Connected to MongoDB
+2025-03-07T09:55:49.265Z [INFO]: Connected to MongoDB
+2025-03-07T09:56:00.719Z [INFO]: Connected to MongoDB
+2025-03-07T09:56:52.630Z [INFO]: Connected to MongoDB
+2025-03-07T09:57:05.525Z [INFO]: Connected to MongoDB
+2025-03-07T09:57:13.652Z [INFO]: Connected to MongoDB
+2025-03-07T09:58:12.085Z [INFO]: Server running on port 4000
+2025-03-07T09:58:12.128Z [INFO]: Connected to MongoDB
+2025-03-07T09:58:25.796Z [INFO]: Server running on port 4000
+2025-03-07T09:58:25.875Z [INFO]: Connected to MongoDB
+2025-03-07T09:58:44.719Z [ERROR]: logger is not defined logger is not defined
+2025-03-07T09:58:44.729Z [ERROR]: logger is not defined logger is not defined
+2025-03-07T09:58:44.890Z [ERROR]: logger is not defined logger is not defined
+2025-03-07T09:58:44.910Z [ERROR]: logger is not defined logger is not defined
+2025-03-07T09:58:44.928Z [ERROR]: logger is not defined logger is not defined
+2025-03-07T09:58:45.045Z [ERROR]: logger is not defined logger is not defined
+2025-03-07T09:59:37.495Z [INFO]: Server running on port 4000
+2025-03-07T09:59:37.543Z [INFO]: Connected to MongoDB
+2025-03-07T09:59:54.623Z [WARN]: Rate limit exceeded by IP: ::1
+2025-03-07T09:59:54.627Z [WARN]: Rate limit exceeded by IP: ::1
+2025-03-07T09:59:54.717Z [WARN]: Rate limit exceeded by IP: ::1
+2025-03-07T09:59:54.721Z [WARN]: Rate limit exceeded by IP: ::1
+2025-03-07T09:59:54.829Z [WARN]: Rate limit exceeded by IP: ::1
+2025-03-07T09:59:54.900Z [WARN]: Rate limit exceeded by IP: ::1
+2025-03-07T10:05:37.338Z [WARN]: Rate limit exceeded by IP: ::1
+2025-03-07T10:05:37.362Z [WARN]: Rate limit exceeded by IP: ::1
+2025-03-07T10:05:37.510Z [WARN]: Rate limit exceeded by IP: ::1
+2025-03-07T10:05:37.620Z [WARN]: Rate limit exceeded by IP: ::1
+2025-03-07T10:05:37.658Z [WARN]: Rate limit exceeded by IP: ::1
+2025-03-07T10:05:37.692Z [WARN]: Rate limit exceeded by IP: ::1
+2025-03-07T10:20:04.106Z [INFO]: Server running on port 4000
+2025-03-07T10:20:09.099Z [INFO]: Server running on port 4000
+2025-03-07T10:20:39.210Z [ERROR]: Could not connect to MongoDB Could not connect to any servers in your MongoDB Atlas cluster. One common reason is that you're trying to access the database from an IP that isn't whitelisted. Make sure your current IP address is on your Atlas cluster's IP whitelist: https://www.mongodb.com/docs/atlas/security-whitelist/
+2025-03-07T10:21:07.419Z [INFO]: Server running on port 4000
+2025-03-07T10:21:37.524Z [ERROR]: Could not connect to MongoDB Could not connect to any servers in your MongoDB Atlas cluster. One common reason is that you're trying to access the database from an IP that isn't whitelisted. Make sure your current IP address is on your Atlas cluster's IP whitelist: https://www.mongodb.com/docs/atlas/security-whitelist/
+2025-03-07T12:22:19.224Z [INFO]: Server running on port 4000
+2025-03-07T12:22:49.346Z [ERROR]: Could not connect to MongoDB Could not connect to any servers in your MongoDB Atlas cluster. One common reason is that you're trying to access the database from an IP that isn't whitelisted. Make sure your current IP address is on your Atlas cluster's IP whitelist: https://www.mongodb.com/docs/atlas/security-whitelist/
+2025-03-08T06:29:36.927Z [INFO]: Server running on port 4000
+2025-03-08T06:29:38.447Z [ERROR]: Could not connect to MongoDB bad auth : authentication failed
+2025-03-08T06:40:02.245Z [INFO]: Server running on port 4000
+2025-03-08T06:40:03.775Z [ERROR]: Could not connect to MongoDB bad auth : authentication failed
+2025-03-08T06:40:15.664Z [INFO]: Server running on port 4000
+2025-03-08T06:40:16.732Z [ERROR]: Could not connect to MongoDB bad auth : authentication failed
+2025-03-08T06:41:26.169Z [INFO]: Server running on port 4000
+2025-03-08T06:41:28.062Z [ERROR]: Could not connect to MongoDB bad auth : authentication failed
+2025-03-08T06:41:55.820Z [INFO]: Server running on port 4000
+2025-03-08T06:41:56.923Z [ERROR]: Could not connect to MongoDB bad auth : authentication failed
+2025-03-08T06:42:54.500Z [ERROR]: Could not connect to MongoDB bad auth : authentication failed
+2025-03-08T06:43:07.523Z [INFO]: Server running on port 4000
+2025-03-08T06:43:08.511Z [ERROR]: Could not connect to MongoDB bad auth : authentication failed
+2025-03-08T06:44:19.930Z [INFO]: Server running on port 4000
+2025-03-08T06:44:21.523Z [ERROR]: Could not connect to MongoDB bad auth : authentication failed
+2025-03-08T06:44:27.603Z [INFO]: Server running on port 4000
+2025-03-08T06:44:28.887Z [ERROR]: Could not connect to MongoDB bad auth : authentication failed
+2025-03-08T06:48:17.065Z [INFO]: Server running on port 4000
+2025-03-08T06:48:18.694Z [ERROR]: Could not connect to MongoDB bad auth : authentication failed
+2025-03-08T06:49:07.424Z [INFO]: Server running on port 4000
+2025-03-08T06:49:08.366Z [ERROR]: Could not connect to MongoDB bad auth : authentication failed
+2025-03-08T06:49:13.097Z [INFO]: Server running on port 4000
+2025-03-08T06:49:14.101Z [ERROR]: Could not connect to MongoDB bad auth : authentication failed
+2025-03-08T06:49:55.375Z [INFO]: Server running on port 4000
+2025-03-08T06:49:56.996Z [ERROR]: Could not connect to MongoDB bad auth : authentication failed
+2025-03-08T06:50:51.389Z [INFO]: Server running on port 4000
+2025-03-08T06:50:52.383Z [ERROR]: Could not connect to MongoDB bad auth : authentication failed

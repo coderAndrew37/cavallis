@@ -117,3 +117,26 @@
 2025-03-07T09:26:24.024Z [ERROR]: logger is not defined logger is not defined
 2025-03-07T09:26:24.100Z [ERROR]: logger is not defined logger is not defined
 2025-03-07T09:26:24.163Z [ERROR]: logger is not defined logger is not defined
+2025-03-07T09:58:44.719Z [ERROR]: logger is not defined logger is not defined
+2025-03-07T09:58:44.729Z [ERROR]: logger is not defined logger is not defined
+2025-03-07T09:58:44.890Z [ERROR]: logger is not defined logger is not defined
+2025-03-07T09:58:44.910Z [ERROR]: logger is not defined logger is not defined
+2025-03-07T09:58:44.928Z [ERROR]: logger is not defined logger is not defined
+2025-03-07T09:58:45.045Z [ERROR]: logger is not defined logger is not defined
+2025-03-07T10:20:39.210Z [ERROR]: Could not connect to MongoDB Could not connect to any servers in your MongoDB Atlas cluster. One common reason is that you're trying to access the database from an IP that isn't whitelisted. Make sure your current IP address is on your Atlas cluster's IP whitelist: https://www.mongodb.com/docs/atlas/security-whitelist/
+2025-03-07T10:21:37.524Z [ERROR]: Could not connect to MongoDB Could not connect to any servers in your MongoDB Atlas cluster. One common reason is that you're trying to access the database from an IP that isn't whitelisted. Make sure your current IP address is on your Atlas cluster's IP whitelist: https://www.mongodb.com/docs/atlas/security-whitelist/
+2025-03-07T12:22:49.346Z [ERROR]: Could not connect to MongoDB Could not connect to any servers in your MongoDB Atlas cluster. One common reason is that you're trying to access the database from an IP that isn't whitelisted. Make sure your current IP address is on your Atlas cluster's IP whitelist: https://www.mongodb.com/docs/atlas/security-whitelist/
+2025-03-08T06:29:38.447Z [ERROR]: Could not connect to MongoDB bad auth : authentication failed
+2025-03-08T06:40:03.775Z [ERROR]: Could not connect to MongoDB bad auth : authentication failed
+2025-03-08T06:40:16.732Z [ERROR]: Could not connect to MongoDB bad auth : authentication failed
+2025-03-08T06:41:28.062Z [ERROR]: Could not connect to MongoDB bad auth : authentication failed
+2025-03-08T06:41:56.923Z [ERROR]: Could not connect to MongoDB bad auth : authentication failed
+2025-03-08T06:42:54.500Z [ERROR]: Could not connect to MongoDB bad auth : authentication failed
+2025-03-08T06:43:08.511Z [ERROR]: Could not connect to MongoDB bad auth : authentication failed
+2025-03-08T06:44:21.523Z [ERROR]: Could not connect to MongoDB bad auth : authentication failed
+2025-03-08T06:44:28.887Z [ERROR]: Could not connect to MongoDB bad auth : authentication failed
+2025-03-08T06:48:18.694Z [ERROR]: Could not connect to MongoDB bad auth : authentication failed
+2025-03-08T06:49:08.366Z [ERROR]: Could not connect to MongoDB bad auth : authentication failed
+2025-03-08T06:49:14.101Z [ERROR]: Could not connect to MongoDB bad auth : authentication failed
+2025-03-08T06:49:56.996Z [ERROR]: Could not connect to MongoDB bad auth : authentication failed
+2025-03-08T06:50:52.383Z [ERROR]: Could not connect to MongoDB bad auth : authentication failed

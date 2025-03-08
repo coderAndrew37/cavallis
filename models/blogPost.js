@@ -11,13 +11,14 @@ const commentSchema = new mongoose.Schema({
 const blogPostSchema = new mongoose.Schema({
   title: { type: String, required: true },
   content: { type: String, required: true },
-  author: { type: String, required: true },
+  author: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
   category: {
     type: String,
     enum: ["Health", "Nutrition", "Recipes"],
     required: true,
   },
-  comments: [commentSchema], // Array of comments
+  status: { type: String, enum: ["pending", "approved"], default: "pending" }, // ✅ New
+  comments: [commentSchema],
   createdAt: { type: Date, default: Date.now },
 });
 
@@ -30,6 +31,7 @@ function validateBlogPost(blogPost) {
     content: Joi.string().min(10).required(),
     author: Joi.string().min(3).max(50).required(),
     category: Joi.string().valid("Health", "Nutrition", "Recipes").required(),
+    status: Joi.string().valid("pending", "approved").default("pending"),
   });
   return schema.validate(blogPost);
 }

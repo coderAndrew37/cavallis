@@ -14,6 +14,7 @@ const adminAnalyticsRoutes = require("../routes/adminTrends");
 const adminContentRoutes = require("../routes/adminContent");
 const referral = require("../routes/refferals");
 const Chatbot = require("../routes/chatbot");
+const search = require("../routes/search");
 module.exports = function (app) {
   app.use("/api/auth", users);
   app.use("/api/products", products);
@@ -31,4 +32,5 @@ module.exports = function (app) {
   app.use("/api/admin/content", adminContentRoutes);
   app.use("/api/refferal", referral);
   app.use("/api/chatbot", Chatbot);
+  app.use("/api/search", search);
 };

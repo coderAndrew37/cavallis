@@ -1,8 +1,7 @@
 const express = require("express");
 const { Product } = require("../models/product");
-const { Blog } = require("../models/blog");
-const { FAQ } = require("../models/faq");
-const { Testimonial } = require("../models/testimonial");
+const { BlogPost } = require("../models/blogPost");
+const { Review } = require("../models/review");
 
 const router = express.Router();
 
@@ -21,20 +20,20 @@ router.get("/", async (req, res) => {
     }).select("name price category image");
 
     // 🔹 Search Blog Posts (by title & content)
-    const blogs = await Blog.find({
+    const blogs = await BlogPost.find({
       $or: [
         { title: { $regex: query, $options: "i" } },
         { content: { $regex: query, $options: "i" } },
       ],
     }).select("title excerpt");
 
-    // 🔹 Search FAQs (by question)
-    const faqs = await FAQ.find({
-      question: { $regex: query, $options: "i" },
-    }).select("question answer");
+    // // 🔹 Search FAQs (by question)
+    // const faqs = await FAQ.find({
+    //   question: { $regex: query, $options: "i" },
+    // }).select("question answer");
 
     // 🔹 Search Testimonials (by customer name & comment)
-    const testimonials = await Testimonial.find({
+    const testimonials = await Review.find({
       $or: [
         { name: { $regex: query, $options: "i" } },
         { comment: { $regex: query, $options: "i" } },
@@ -42,7 +41,7 @@ router.get("/", async (req, res) => {
     }).select("name comment");
 
     res.json({
-      results: { products, blogs, faqs, testimonials },
+      results: { products, blogs, testimonials },
     });
   } catch (error) {
     console.error("Error searching:", error);

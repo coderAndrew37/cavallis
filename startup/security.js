@@ -1,6 +1,7 @@
 const cors = require("cors");
 const helmet = require("helmet");
 const rateLimit = require("express-rate-limit");
+const logger = require("./logger");
 
 // ✅ Fix CORS: Ensure frontend requests are allowed
 const corsOptions = {

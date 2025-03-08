@@ -20,28 +20,33 @@ router.post("/", auth, async (req, res) => {
   if (error) return res.status(400).json({ error: error.details[0].message });
 
   try {
+    const isAdmin = req.user.role === "admin";
+
     const blogPost = new BlogPost({
       title: req.body.title,
       content: req.body.content,
       author: req.user.userId, // Set the author to the logged-in user
       category: req.body.category,
+      status: isAdmin ? "approved" : "pending", // ✅ Admins publish instantly, users require approval
     });
 
     await blogPost.save();
     res.status(201).json(blogPost);
   } catch (error) {
-    handleError(res, error, "Failed to create blog post");
+    res.status(500).json({ error: "Failed to create blog post" });
   }
 });
 
 // Get all blog posts with pagination and filtering
-router.get("/", async (req, res) => {
+router.get("/", auth, async (req, res) => {
   const page = parseInt(req.query.page, 10) || 1;
   const limit = parseInt(req.query.limit, 10) || 10;
-  const category = req.query.category; // Optional category filter
+  const category = req.query.category;
+  const status =
+    req.query.status || (req.user?.role === "admin" ? null : "approved"); // ✅ Default: Users only see approved blogs, admins see all
 
-  // Build filter
   const filter = {};
+  if (status) filter.status = status;
   if (category) filter.category = category;
 
   try {
@@ -53,18 +58,13 @@ router.get("/", async (req, res) => {
     const totalBlogPosts = await BlogPost.countDocuments(filter);
     const totalPages = Math.ceil(totalBlogPosts / limit);
 
-    res.json({
-      blogPosts,
-      currentPage: page,
-      totalPages,
-      totalBlogPosts,
-    });
+    res.json({ blogPosts, currentPage: page, totalPages, totalBlogPosts });
   } catch (error) {
-    handleError(res, error, "Failed to fetch blog posts");
+    res.status(500).json({ error: "Failed to fetch blog posts" });
   }
 });
 
-// Get blog post by ID
+// Get a specific blog post
 router.get("/:id", async (req, res) => {
   try {
     const blogPost = await BlogPost.findById(req.params.id).lean();
@@ -76,14 +76,19 @@ router.get("/:id", async (req, res) => {
   }
 });
 
-// Update a blog post (admin only)
-router.put("/:id", auth, isAdmin, async (req, res) => {
+// Users can only edit pending blogs, admins can edit anything
+router.put("/:id", auth, async (req, res) => {
   const { error } = validateBlogPost(req.body);
   if (error) return res.status(400).json({ error: error.details[0].message });
 
   try {
+    const filter =
+      req.user.role === "admin"
+        ? { _id: req.params.id } // ✅ Admins can edit any blog
+        : { _id: req.params.id, author: req.user.userId, status: "pending" }; // ✅ Users can only edit pending blogs
+
     const blogPost = await BlogPost.findOneAndUpdate(
-      { _id: req.params.id, author: req.user.userId }, // Ensure the user can only update their own blog post
+      filter,
       {
         title: req.body.title,
         content: req.body.content,
@@ -93,28 +98,51 @@ router.put("/:id", auth, isAdmin, async (req, res) => {
     );
 
     if (!blogPost)
-      return res.status(404).json({ error: "Blog post not found" });
+      return res
+        .status(404)
+        .json({ error: "Blog post not found or cannot be edited" });
 
     res.json(blogPost);
   } catch (error) {
-    handleError(res, error, "Failed to update blog post");
+    res.status(500).json({ error: "Failed to update blog post" });
   }
 });
 
-// Delete a blog post (admin only)
-router.delete("/:id", auth, isAdmin, async (req, res) => {
+// Approve a blog post (admin only)
+router.patch("/:id/approve", auth, isAdmin, async (req, res) => {
   try {
-    const blogPost = await BlogPost.findOneAndDelete({
-      _id: req.params.id,
-      author: req.user.userId, // Ensure the user can only delete their own blog post
-    });
-
+    const blogPost = await BlogPost.findByIdAndUpdate(
+      req.params.id,
+      { status: "approved" },
+      { new: true }
+    );
     if (!blogPost)
       return res.status(404).json({ error: "Blog post not found" });
 
+    res.json({ message: "Blog post approved successfully", blogPost });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to approve blog post" });
+  }
+});
+
+// Delete a blog post (admin can delete any, users can delete pending)
+router.delete("/:id", auth, async (req, res) => {
+  try {
+    const filter =
+      req.user.role === "admin"
+        ? { _id: req.params.id } // ✅ Admins can delete any blog
+        : { _id: req.params.id, author: req.user.userId, status: "pending" }; // ✅ Users can only delete pending blogs
+
+    const blogPost = await BlogPost.findOneAndDelete(filter);
+
+    if (!blogPost)
+      return res
+        .status(404)
+        .json({ error: "Blog post not found or not deletable" });
+
     res.json({ message: "Blog post deleted successfully" });
   } catch (error) {
-    handleError(res, error, "Failed to delete blog post");
+    res.status(500).json({ error: "Failed to delete blog post" });
   }
 });
 

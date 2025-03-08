@@ -10,12 +10,12 @@ module.exports = function () {
 
   // Set up options for MongoDB connection
 
-  // const mongooseOptions = {
-  //   ssl: true, // Removed for local connection
-  // };
+  const mongooseOptions = {
+    ssl: true, // Removed for local connection
+  };
 
   mongoose
-    .connect(mongoURI /*mongooseOptions*/)
+    .connect(mongoURI, mongooseOptions)
     .then(() => logger.info("Connected to MongoDB"))
     .catch((err) => {
       logger.error("Could not connect to MongoDB", err);
