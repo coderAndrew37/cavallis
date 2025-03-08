@@ -2,6 +2,7 @@ const express = require("express");
 const { Order, validateOrder } = require("../models/order");
 const { Product } = require("../models/product");
 const auth = require("../middleware/auth");
+const { io } = require("../app"); // ✅ Import `io` from app.js
 const sendEmail = require("../utils/email");
 const router = express.Router();
 
@@ -38,17 +39,8 @@ router.post("/", auth, async (req, res) => {
 
     await order.save();
 
-    // ✅ Reward the Referrer (if applicable)
-    const user = await User.findById(req.user.userId);
-    if (user.referredBy) {
-      const referrer = await User.findOne({ referralCode: user.referredBy });
-      if (referrer) {
-        const rewardAmount = totalAmount * 0.1;
-        referrer.referralRewards += rewardAmount;
-        referrer.withdrawableBalance += rewardAmount;
-        await referrer.save();
-      }
-    }
+    // ✅ Emit event to notify admins of new order
+    io.emit("newOrder", { message: "New order placed!", order });
 
     res.status(201).json(order);
   } catch (error) {

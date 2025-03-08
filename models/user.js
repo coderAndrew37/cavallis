@@ -10,6 +10,13 @@ const userSchema = new mongoose.Schema({
     enum: ["user", "distributor", "admin"],
     default: "user",
   },
+  notifications: [
+    {
+      message: String,
+      read: { type: Boolean, default: false },
+      createdAt: { type: Date, default: Date.now },
+    },
+  ],
   referralCode: { type: String, unique: true, default: null }, // 🚀 Default to null
   referredBy: { type: String, default: null }, // 🚀 Default to null
   referralRewards: { type: Number, default: 0 },
@@ -34,6 +41,14 @@ function validateUser(user) {
     password: Joi.string().min(6).required(),
     role: Joi.string().valid("user", "distributor", "admin"),
     referralCode: Joi.string().optional(),
+    referredBy: Joi.string().optional(),
+    notifications: Joi.array().items(
+      Joi.object({
+        message: Joi.string().required(),
+        read: Joi.boolean().default(false),
+        createdAt: Joi.date().default(Date.now),
+      })
+    ),
   });
   return schema.validate(user);
 }

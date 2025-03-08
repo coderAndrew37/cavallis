@@ -108,7 +108,7 @@ router.put("/:id", auth, async (req, res) => {
   }
 });
 
-// Approve a blog post (admin only)
+// ✅ Approve a blog post (admin only)
 router.patch("/:id/approve", auth, isAdmin, async (req, res) => {
   try {
     const blogPost = await BlogPost.findByIdAndUpdate(
@@ -116,8 +116,19 @@ router.patch("/:id/approve", auth, isAdmin, async (req, res) => {
       { status: "approved" },
       { new: true }
     );
+
     if (!blogPost)
       return res.status(404).json({ error: "Blog post not found" });
+
+    // 🔹 Fetch user and send notification
+    const user = await User.findById(blogPost.author);
+    if (user) {
+      user.notifications.push({
+        message: `Your blog post "${blogPost.title}" has been approved! 🎉`,
+        read: false,
+      });
+      await user.save();
+    }
 
     res.json({ message: "Blog post approved successfully", blogPost });
   } catch (error) {
