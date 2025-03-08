@@ -2,7 +2,6 @@ const express = require("express");
 const { Order, validateOrder } = require("../models/order");
 const { Product } = require("../models/product");
 const auth = require("../middleware/auth");
-const { io } = require("../app"); // ✅ Import `io` from app.js
 const sendEmail = require("../utils/email");
 const router = express.Router();
 
@@ -38,9 +37,6 @@ router.post("/", auth, async (req, res) => {
     });
 
     await order.save();
-
-    // ✅ Emit event to notify admins of new order
-    io.emit("newOrder", { message: "New order placed!", order });
 
     res.status(201).json(order);
   } catch (error) {

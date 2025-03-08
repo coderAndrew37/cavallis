@@ -2,7 +2,7 @@ require("dotenv").config();
 require("./startup/db.js")(); // Initialize MongoDB connection
 const express = require("express");
 const http = require("http"); // ✅ Required for WebSockets
-const socketIo = require("socket.io");
+const { initializeWebSocket } = require("./startup/websocket"); // ✅ WebSocket Module
 const logger = require("./startup/logger");
 const errorHandler = require("./startup/errorHandler.js");
 const { cors, helmet, limiter } = require("./startup/security");
@@ -10,30 +10,14 @@ const path = require("path");
 
 const app = express();
 const server = http.createServer(app); // ✅ Create HTTP Server for WebSockets
-const io = socketIo(server, {
-  cors: { origin: "*" }, // ✅ Allow WebSocket connections from all origins
-});
 
-// ✅ WebSocket Event Listeners
-io.on("connection", (socket) => {
-  console.log("🔌 User connected:", socket.id);
+// ✅ Initialize WebSockets (No cyclic dependency)
+const io = initializeWebSocket(server);
 
-  // Example: Listen for a new notification event
-  socket.on("newNotification", (data) => {
-    io.emit("newNotification", data); // Broadcast notification to all connected clients
-  });
-
-  socket.on("disconnect", () => {
-    console.log("❌ User disconnected:", socket.id);
-  });
-});
-
-// ✅ Store `io` in `app.locals` so other routes can use it
-app.locals.io = io;
-
+// Middleware
 app.use(helmet);
 app.use(limiter);
-app.use(cors); // ✅ Allow cross-origin requests
+app.use(cors);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -43,13 +27,14 @@ app.use(cookieParser());
 
 require("./startup/routes")(app); // ✅ Ensure routes come after middleware
 
-// Serve static files from the "uploads" directory
-app.use("/uploads", express.static(path.join(__dirname, "uploads"))); // Serve uploaded files
+// Serve static files
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-// Custom error handler for all other errors
+// Custom error handler
 app.use(errorHandler);
 
+// Start Server
 const PORT = process.env.PORT || 4000;
 server.listen(PORT, () => logger.info(`🚀 Server running on port ${PORT}`));
 
-module.exports = { app, io }; // ✅ Export `io` for use in other files
+module.exports = { app, io };

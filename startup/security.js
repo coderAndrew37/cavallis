@@ -5,15 +5,15 @@ const logger = require("./logger");
 
 // ✅ Fix CORS: Ensure frontend requests are allowed
 const corsOptions = {
-  origin: process.env.FRONTEND_URL || "http://localhost:5173", // ✅ Make sure this matches frontend
+  origin: process.env.FRONTEND_URL || "http://localhost:5173", // ✅ Ensure this matches frontend
   methods: ["GET", "POST", "PUT", "DELETE"], // Allow common methods
-  credentials: true, // ✅ This allows cookies to be sent
+  credentials: true, // ✅ This allows cookies & authentication tokens to be sent
 };
 
 exports.cors = cors(corsOptions);
 exports.helmet = helmet();
 
-// Rate limiting with environment-specific configurations
+// ✅ Adjust Rate Limit
 const isDevelopment = process.env.NODE_ENV === "development";
 
 exports.limiter = rateLimit({
