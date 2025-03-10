@@ -1,11 +1,10 @@
 const express = require("express");
 const { User, validateUser } = require("../models/user");
 const bcrypt = require("bcryptjs");
-const rateLimit = require("express-rate-limit");
 const crypto = require("crypto");
 const sendEmail = require("../utils/email");
-
 const auth = require("../middleware/auth");
+
 const {
   generateAccessToken,
   generateRefreshToken,
@@ -16,11 +15,12 @@ const {
 
 const router = express.Router();
 
-// ✅ Rate Limit (Anti-brute force)
+// ✅ Rate Limit for Login & Register
+const rateLimit = require("express-rate-limit");
 const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 10, // ✅ Allow 10 login/register attempts per 15 minutes
-  message: "Too many login/register attempts, please try again later.",
+  windowMs: 10 * 60 * 1000, // ✅ 10 minutes
+  max: 20, // ✅ Increased limit to prevent 429 errors
+  message: "Too many login attempts, please try again later.",
 });
 
 // ✅ Register User (Referral Code is Optional)
@@ -36,9 +36,8 @@ router.post("/register", authLimiter, async (req, res) => {
   // ✅ If referral code is provided, validate it
   if (req.body.referralCode) {
     referrer = await User.findOne({ referralCode: req.body.referralCode });
-    if (!referrer) {
+    if (!referrer)
       return res.status(400).json({ message: "Invalid referral code" });
-    }
   }
 
   const hashedPassword = await bcrypt.hash(req.body.password, 10);
@@ -48,8 +47,8 @@ router.post("/register", authLimiter, async (req, res) => {
     email: req.body.email,
     password: hashedPassword,
     role: req.body.role || "user",
-    referralCode: null, // ✅ Default: User is NOT in the referral program yet
-    referredBy: referrer ? referrer._id : null, // ✅ Store referrer if available
+    referralCode: null,
+    referredBy: referrer ? referrer._id : null,
   });
 
   await user.save();
@@ -64,7 +63,7 @@ router.post("/register", authLimiter, async (req, res) => {
       id: user._id,
       name: user.name,
       email: user.email,
-      referralCode: user.referralCode, // Will be `null` until they opt in
+      referralCode: user.referralCode,
       referredBy: referrer ? referrer.referralCode : null,
     },
   });
@@ -72,7 +71,7 @@ router.post("/register", authLimiter, async (req, res) => {
 
 // ✅ Refresh Access Token
 router.post("/refresh-token", async (req, res) => {
-  const refreshToken = req.cookies.refreshToken;
+  const refreshToken = req.cookies?.refreshToken;
   if (!refreshToken) return res.status(401).json({ message: "Unauthorized" });
 
   try {
@@ -83,10 +82,10 @@ router.post("/refresh-token", async (req, res) => {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "None",
-      maxAge: 15 * 60 * 1000, // 15 minutes
+      maxAge: 15 * 60 * 1000,
     });
 
-    res.json({ success: true });
+    res.json({ token: newAccessToken }); // ✅ FIX: Returning token instead of `{ success: true }`
   } catch {
     res.clearCookie("refreshToken", { sameSite: "None", secure: true });
     res.status(403).json({ message: "Invalid refresh token" });
@@ -97,32 +96,24 @@ router.post("/refresh-token", async (req, res) => {
 router.post("/login", authLimiter, async (req, res) => {
   const { email, password } = req.body;
 
-  // Validate input
   if (!email || !password) {
     return res.status(400).json({ message: "Email and password are required" });
   }
 
   try {
-    // Find user by email
     const user = await User.findOne({ email });
-    if (!user) {
+    if (!user)
       return res.status(400).json({ message: "Invalid email or password" });
-    }
 
-    // Compare passwords
     const isPasswordValid = await bcrypt.compare(password, user.password);
-    if (!isPasswordValid) {
+    if (!isPasswordValid)
       return res.status(400).json({ message: "Invalid email or password" });
-    }
 
-    // Generate tokens
     const accessToken = generateAccessToken(user._id, user.role);
     const refreshToken = generateRefreshToken(user._id, user.role);
 
-    // Set cookies
     setAuthCookies(res, accessToken, refreshToken);
 
-    // Send response
     res.json({
       user: {
         id: user._id,
@@ -139,8 +130,15 @@ router.post("/login", authLimiter, async (req, res) => {
 
 // ✅ Get Current User
 router.get("/me", auth, async (req, res) => {
-  const user = await User.findById(req.user.userId).select("-password");
-  res.json(user);
+  try {
+    const user = await User.findById(req.user.userId).select("-password");
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    res.json(user);
+  } catch (error) {
+    console.error("Error fetching user:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
 });
 
 // ✅ Logout user (clears cookies)
@@ -155,18 +153,15 @@ router.post("/forgot-password", authLimiter, async (req, res) => {
   if (!email) return res.status(400).json({ message: "Email is required" });
 
   try {
-    // Find user by email
     const user = await User.findOne({ email });
     if (!user) return res.status(404).json({ message: "User not found" });
 
-    // Generate reset token
     const resetToken = crypto.randomBytes(20).toString("hex");
     user.resetPasswordToken = resetToken;
-    user.resetPasswordExpires = Date.now() + 3600000; // 1 hour
+    user.resetPasswordExpires = Date.now() + 3600000;
 
     await user.save();
 
-    // Send reset password email
     const resetUrl = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
     await sendEmail(user.email, "Password Reset Request", "forgot-password", {
       name: user.name,
@@ -187,7 +182,6 @@ router.post("/reset-password/:token", authLimiter, async (req, res) => {
   const { token } = req.params;
   const { password } = req.body;
 
-  // Validate input
   if (!password || password.length < 8) {
     return res
       .status(400)
@@ -195,16 +189,13 @@ router.post("/reset-password/:token", authLimiter, async (req, res) => {
   }
 
   try {
-    // Find user by reset token
     const user = await User.findOne({
       resetPasswordToken: token,
       resetPasswordExpires: { $gt: Date.now() },
     });
-    if (!user) {
+    if (!user)
       return res.status(400).json({ message: "Invalid or expired token" });
-    }
 
-    // Hash new password
     user.password = await bcrypt.hash(password, 10);
     user.resetPasswordToken = undefined;
     user.resetPasswordExpires = undefined;
